@@ -1,1 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>City Twin — Live City Monitor</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="scanline"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">CT</span>
+    <div class="brand-text">
+      <span class="brand-name">CITY TWIN</span>
+      <span class="brand-sub">LIVE CITY MONITOR</span>
+    </div>
+  </div>
+
+  <div class="city-select-wrap">
+    <label for="citySelect" class="visually-hidden">Choose a city</label>
+    <select id="citySelect" class="city-select">
+      <option value="cairo" data-lat="30.0444" data-lon="31.2357">Cairo, Egypt</option>
+      <option value="newyork" data-lat="40.7128" data-lon="-74.0060">New York, USA</option>
+      <option value="london" data-lat="51.5074" data-lon="-0.1278">London, UK</option>
+      <option value="tokyo" data-lat="35.6762" data-lon="139.6503">Tokyo, Japan</option>
+      <option value="lagos" data-lat="6.5244" data-lon="3.3792">Lagos, Nigeria</option>
+      <option value="saopaulo" data-lat="-23.5505" data-lon="-46.6333">São Paulo, Brazil</option>
+      <option value="mumbai" data-lat="19.0760" data-lon="72.8777">Mumbai, India</option>
+      <option value="sydney" data-lat="-33.8688" data-lon="151.2093">Sydney, Australia</option>
+    </select>
+  </div>
+
+  <div class="status-pill" id="statusPill">
+    <span class="status-dot"></span>
+    <span id="statusText">SYNCING</span>
+  </div>
+</header>
+
+<main class="layout">
+
+  <section class="map-wrap">
+    <div id="map"></div>
+    <div class="map-caption">
+      <span id="mapCityName">CAIRO</span>
+      <span class="map-coords" id="mapCoords">30.0444°N, 31.2357°E</span>
+    </div>
+  </section>
+
+  <aside class="panel">
+
+    <div class="panel-scroll">
+
+      <div class="card" data-card="weather">
+        <div class="card-head">
+          <span class="card-label">WEATHER</span>
+          <span class="card-pulse" data-pulse="weather">—</span>
+        </div>
+        <div class="card-body" id="weatherBody">
+          <div class="big-readout">
+            <span class="big-num" id="tempVal">––</span>
+            <span class="big-unit">°C</span>
+          </div>
+          <div class="readout-desc" id="weatherDesc">awaiting signal</div>
+          <div class="mini-grid">
+            <div class="mini-stat">
+              <span class="mini-label">FEELS LIKE</span>
+              <span class="mini-val" id="feelsLikeVal">––°</span>
+            </div>
+            <div class="mini-stat">
+              <span class="mini-label">HUMIDITY</span>
+              <span class="mini-val" id="humidityVal">––%</span>
+            </div>
+            <div class="mini-stat">
+              <span class="mini-label">WIND</span>
+              <span class="mini-val" id="windVal">–– km/h</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" data-card="air">
+        <div class="card-head">
+          <span class="card-label">AIR QUALITY</span>
+          <span class="card-pulse" data-pulse="air">—</span>
+        </div>
+        <div class="card-body" id="airBody">
+          <div class="aqi-row">
+            <div class="aqi-badge" id="aqiBadge">––</div>
+            <div class="aqi-text">
+              <span class="aqi-level" id="aqiLevel">awaiting signal</span>
+              <span class="aqi-sub">US AQI index</span>
+            </div>
+          </div>
+          <div class="mini-grid mini-grid-4">
+            <div class="mini-stat">
+              <span class="mini-label">PM2.5</span>
+              <span class="mini-val" id="pm25Val">––</span>
+            </div>
+            <div class="mini-stat">
+              <span class="mini-label">PM10</span>
+              <span class="mini-val" id="pm10Val">––</span>
+            </div>
+            <div class="mini-stat">
+              <span class="mini-label">O₃</span>
+              <span class="mini-val" id="o3Val">––</span>
+            </div>
+            <div class="mini-stat">
+              <span class="mini-label">NO₂</span>
+              <span class="mini-val" id="no2Val">––</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" data-card="quake">
+        <div class="card-head">
+          <span class="card-label">SEISMIC ACTIVITY</span>
+          <span class="card-pulse" data-pulse="quake">—</span>
+        </div>
+        <div class="card-body" id="quakeBody">
+          <div class="readout-desc" id="quakeSummary">scanning nearby region…</div>
+          <ul class="quake-list" id="quakeList"></ul>
+        </div>
+      </div>
+
+      <div class="card card-score" data-card="score">
+        <div class="card-head">
+          <span class="card-label">CITY HEALTH SCORE</span>
+          <span class="card-pulse" data-pulse="score">—</span>
+        </div>
+        <div class="card-body">
+          <div class="score-row">
+            <div class="score-ring-wrap">
+              <svg viewBox="0 0 100 100" class="score-ring">
+                <circle cx="50" cy="50" r="42" class="score-ring-bg"/>
+                <circle cx="50" cy="50" r="42" class="score-ring-fg" id="scoreRing"/>
+              </svg>
+              <span class="score-num" id="scoreNum">––</span>
+            </div>
+            <div class="score-detail">
+              <span class="score-status" id="scoreStatus">CALCULATING</span>
+              <span class="score-note" id="scoreNote">Derived from live weather, air quality and seismic signals.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </aside>
+
+</main>
+
+<footer class="footer-strip">
+  <span>CITY TWIN — PHASE 1 PROTOTYPE</span>
+  <span class="footer-divider">·</span>
+  <span>DATA: OPEN-METEO / USGS</span>
+  <span class="footer-divider">·</span>
+  <span id="clockReadout">--:--:--</span>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
 
